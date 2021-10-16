@@ -9,7 +9,7 @@ Yammer noticed a drop in Weekly Active Users, “the number of users who logged 
 
 My goal is to find out what causes the decrease in weekly active users shown in the [plot](https://app.mode.com/modeanalytics/reports/cbb8c291ee96/runs/7925c979521e/viz1/cfcdb6b78885) below:
 
-
+![Weekly Active Users](dashboard.png)
 
 
 ## Plan
@@ -24,29 +24,29 @@ I first brainstorm some potential causes for the drop in engagement:
 
 There are four tables in total.
 
-### Table1 Users:
+### Table 1: Users
 
 This table includes one row per user, with descriptive information about that user's account.
 
+![Table 1: Users](table1.png)
 
-
-### Table2 Events:
+### Table 2: Events
 
 This table includes one row per event, where an event is an action that a user has taken on Yammer. These events include login events, messaging events, search events, events logged as users progress through a signup funnel, events around received emails.
 
+![Table 2: Events](table2.png)
 
-
-### Table3 
+### Table 3: Email Events
 
 This table contains events specific to the sending of emails. It is similar in structure to the events table above.
 
+![Table 3: Email Events](table3.png)
 
-
-### Table 4
+### Table 4: Rollup Periods
 
 The last table is a lookup table that is used to create rolling time periods. 
 
-
+![Table 4: Rollup Periods](table4.png)
 
 ## Analysis
 
