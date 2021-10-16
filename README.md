@@ -16,9 +16,12 @@ My goal is to find out what causes the decrease in weekly active users shown in 
 
 I first brainstorm some potential causes for the drop in engagement:
 
--
--
--
+- Holiday
+- Broken Features
+- Marketing Events
+- Traffic shutdown (outage)
+
+Then, approach to the dataset to diagnose the problems and see if any of these fits into play.
 
 ## Data
 
@@ -50,9 +53,11 @@ The last table is a lookup table that is used to create rolling time periods.
 
 ## Analysis
 
+First, I take a look at the dataset to see how engagements are defined in the events table. 
 
 ## Conclusion
 
+After investigation, it appears that the problem has to do with mobile use and digest emails.
 
 ## Recommendation
 
