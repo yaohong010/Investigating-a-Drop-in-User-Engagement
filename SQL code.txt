@@ -1,0 +1,163 @@
+/*What events are categoried as engagement*/
+SELECT DISTINCT event_name, event_type 
+FROM tutorial.yammer_events
+ORDER BY event_type, event_name;
+
+/*See what's the difference in engagement between months*/
+With one as (
+SELECT 
+  EXTRACT('month' FROM occurred_at) as month,
+  count(event_name) as event_count
+FROM tutorial.yammer_events
+GROUP BY
+  month
+)
+
+SELECT *,
+(event_count - LAG(event_count) OVER (ORDER BY month ASC)) as diff 
+FROM one;
+
+/*count the number of occurrences of each ‘engagement’ event month over month*/
+/*Get the change in event_count*/
+with two as (
+with one as (
+SELECT 
+  CONCAT(EXTRACT('month' FROM occurred_at), '-', EXTRACT('year' FROM occurred_at)) AS month_year, 
+  event_name, 
+  COUNT(event_name) AS event_count
+FROM tutorial.yammer_events
+WHERE event_type = 'engagement'
+GROUP BY 
+  event_name, month_year
+)
+SELECT *, 
+  CASE 
+    WHEN month_year = '5-2014'
+      THEN 0
+    WHEN month_year != '5-2014'
+      THEN (event_count - LAG(event_count) OVER (ORDER BY event_name ASC, month_year ASC))
+    ELSE NULL 
+  END AS abs_change
+FROM one
+)
+SELECT *
+FROM two 
+WHERE month_year = '8-2014' AND abs_change < 0
+ORDER BY abs_change ASC;
+
+/*User-level Aggregation*/
+/*to see if the drop was due to a drop in users or a drop in the number of engagements/user*/
+SELECT 
+  EXTRACT('month' FROM occurred_at) as month, 
+  COUNT(DISTINCT user_id) as num_users
+FROM tutorial.yammer_events
+WHERE event_type = 'engagement'
+GROUP BY month;
+
+/*To see if the engagement per user declined as well*/
+SELECT 
+  EXTRACT('month' FROM occurred_at) as month,
+  COUNT(event_name) as num_event,
+  COUNT(DISTINCT user_id) as num_users,
+  COUNT(event_name)/COUNT(DISTINCT user_id) as events_per_user
+FROM tutorial.yammer_events
+WHERE event_type = 'engagement'
+GROUP BY month;
+
+/*Email activity and CTRS (click-through-rates)*/
+SELECT 
+  action, 
+  EXTRACT('month' FROM occurred_at) as month,
+  count(action) as num_emails
+FROM tutorial.yammer_emails
+GROUP BY action, month
+ORDER BY action, month;
+
+/*investigage the CTRs by device*/
+with emails as (
+SELECT 
+  *, 
+  CONCAT(EXTRACT('day' FROM occurred_at), '-', EXTRACT('month' FROM occurred_at), '-', EXTRACT('year' FROM occurred_at)) as date,
+  EXTRACT('month' FROM occurred_at) as month
+FROM tutorial.yammer_emails emails
+), 
+events as (
+  SELECT DISTINCT user_id, 
+  CONCAT(EXTRACT('day' FROM occurred_at), '-', EXTRACT('month' FROM occurred_at), '-',  EXTRACT('year' FROM occurred_at)) as date, 
+  device, 
+  EXTRACT('month' FROM occurred_at) as month
+  FROM tutorial.yammer_events
+  ORDER BY user_id ASC
+)
+SELECT 
+  device,
+  emails.month, 
+  count(emails.user_id)
+FROM emails 
+LEFT JOIN events ON 
+  emails.user_id = events.user_id AND emails.date = events.date 
+WHERE action = 'email_clickthrough'
+GROUP BY device, emails.month;
+
+
+/*Categorying the device name into 'mobile' 'tablet' 'laptop', to verify hypothesis*/
+with emails as(
+SELECT 
+  *,
+  CONCAT(EXTRACT('day' FROM occurred_at), '-', EXTRACT('month' FROM occurred_at), '-',  EXTRACT('year' FROM occurred_at)) as date,
+  EXTRACT('month' FROM occurred_at) as month
+FROM tutorial.yammer_emails emails
+), events as (
+  SELECT DISTINCT 
+    user_id,
+    CONCAT(EXTRACT('day' FROM occurred_at), '-', EXTRACT('month' FROM occurred_at), '-',  EXTRACT('year' FROM occurred_at)) as date,
+    device,
+    EXTRACT('month' FROM occurred_at) as month
+  FROM tutorial.yammer_events
+  ORDER BY user_id ASC
+)
+SELECT 
+  CASE
+    WHEN device IN ('amazon fire phone', 'nexus 10', 'iphone 5', 'nexus 7', 'iphone 5s', 'nexus 5', 'htc one', 'iphone 4s', 'samsung galaxy note', 'nokia lumia 635', 'samsung galaxy s4') THEN 'mobile'
+    WHEN device IN ('ipad mini', 'samsung galaxy tablet', 'kindle fire', 'ipad air') THEN 'tablet_ipad'
+    WHEN device IN ('dell inspiron desktop', 'macbook pro', 'asus chromebook', 'windows surface', 'macbook air', 'lenovo thinkpad', 'mac mini', 'acer aspire desktop', 'acer aspire notebook', 'dell inspiron notebook', 'hp pavilion desktop') THEN 'laptop_comp'
+    ELSE null end as device_type,
+  emails.month,
+  count(emails.user_id)
+FROM emails
+LEFT JOIN events ON
+  emails.user_id = events.user_id
+  AND emails.date = events.date
+WHERE action = 'email_clickthrough'
+GROUP BY device_type, emails.month;
+
+
+/*Given the observation that the lack of engagement is due to decrease in email click through rate*/
+/*narrowing the problem even further by looking at their emails types*/
+with one as (
+SELECT 
+  *,
+  EXTRACT('month' from occurred_at) as month,
+  CASE WHEN (LEAD(action, 1) OVER (PARTITION BY user_id ORDER BY occurred_at ASC)) = 'email_open' THEN 1 ELSE 0 END AS opened_email,
+  CASE WHEN (LEAD(action, 2) OVER (PARTITION BY user_id ORDER BY occurred_at ASC)) = 'email_clickthrough' THEN 1 ELSE 0 END AS clicked_email
+FROM
+  tutorial.yammer_emails
+)
+SELECT 
+  action,
+  month,
+  count(action),
+  sum(opened_email) as num_open,
+  sum(clicked_email) as num_clicked
+FROM
+  one
+WHERE action in ('sent_weekly_digest','sent_reengagement_email')
+GROUP BY
+  action,
+  month
+ORDER BY
+  action,
+  month;
+  
+  /*SELECT DISTINCT action 
+  FROM tutorial.yammer_emails;*/
