@@ -53,14 +53,17 @@ The last table is a lookup table that is used to create rolling time periods.
 
 ## Analysis
 
-First, I take a look at the dataset to see how engagements are defined in the events table. 
+See doc.file for details.
 
 ## Conclusion
 
-After investigation, it appears that the problem has to do with mobile use and digest emails.
+As we define the engagement as server calls made by our user to interact with the Yammer app, I found that there are 2 metrics that account for the drop in user engagement from July to August, 2014: one is the number of users that make server call action (event_type as “engagement”), and second is the email clickthrough rate. Considering those whose action are viewed as engagement, we can see that there is a sharp decrease in number of mobile device users. It accounts for over 50% of the total decrease in the drop of engagement. In addition, email clickthrough rate decrease by 27% from July to August, and we can find that the decrease is also mainly in mobile device. It seems that both metrics are somehow related to mobile device. Furthermore, I found that although users have increasing number in opening emails from both weekly digest type and reengagement type. The click through rate increased in reengagement email, but decrease in weekly digest emails.
 
 ## Recommendation
 
+My recommendation is to immediately take a look into the weekly digest emails specially for mobile device like phones and tablets. I think it is very likely that there is a technical problem there, which makes our users difficult to interact with the email links. 
 
 ## Further Analysis
 
+- (location) Consider group users by location, and see if there are anything that we did not notice before.
+- (cohort analysis) See if the change is attributed to a short user life-cycle
